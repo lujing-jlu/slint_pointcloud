@@ -4,28 +4,54 @@
 import { Slider, GroupBox, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
 
 export component App inherits Window {
-    in property <image> texture <=> image.source;
-    out property <int> requested-texture-width: image.width/1phx;
-    out property <int> requested-texture-height: image.height/1phx;
-    out property <float> rotation-x: x-rotation.value;
-    out property <float> rotation-y: y-rotation.value;
+    // 避免双向绑定
+    in property <image> texture;
+    out property <int> requested-texture-width: i-image.width/1phx;
+    out property <int> requested-texture-height: i-image.height/1phx;
+    
+    // 使用私有属性存储当前旋转状态
+    private property <float> current-x: 0;
+    private property <float> current-y: 0;
+    out property <float> rotation-x: current-x;
+    out property <float> rotation-y: current-y;
+
+    // 存储拖动开始时的旋转角度
+    private property <float> start-x;
+    private property <float> start-y;
 
     preferred-width: 500px;
     preferred-height: 600px;
     title: "Slint Point Cloud Viewer";
 
-    VerticalBox {
+    VerticalLayout {
         Text {
-            text: "This text is rendered using Slint. The point cloud below is rendered into an OpenGL texture.";
+            text: "This text is rendered using Slint. Drag the point cloud to rotate it.";
             wrap: word-wrap;
         }
 
-        image := Image {
-            preferred-width: 640px;
-            preferred-height: 640px;
-            min-width: 64px;
-            min-height: 64px;
-            width: 100%;
+        Rectangle {
+            height: 400px;
+
+            touch-area := TouchArea {
+                width: 100%;
+                height: 100%;
+                
+                pointer-event(event) => {
+                    if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                        root.start-x = root.current-x;
+                        root.start-y = root.current-y;
+                    } else if (event.kind == PointerEventKind.move && self.pressed) {
+                        root.current-x = root.start-x + (self.mouse-y - self.pressed-y) / 1px;
+                        root.current-y = root.start-y + (self.mouse-x - self.pressed-x) / 1px * 0.5;
+                    }
+                }
+
+                i-image := Image {
+                    source: root.texture;
+                    width: 100%;
+                    height: 100%;
+                }
+            }
         }
 
         GroupBox {
@@ -38,9 +64,11 @@ export component App inherits Window {
                         vertical-alignment: center;
                     }
                     x-rotation := Slider {
-                        minimum: 0;
-                        maximum: 360;
-                        value: 0;
+                        minimum: -180;
+                        maximum: 180;
+                        changed => {
+                            root.current-x = self.value;
+                        }
                     }
                 }
                 Row {
@@ -49,9 +77,11 @@ export component App inherits Window {
                         vertical-alignment: center;
                     }
                     y-rotation := Slider {
-                        minimum: 0;
-                        maximum: 360;
-                        value: 0;
+                        minimum: -180;
+                        maximum: 180;
+                        changed => {
+                            root.current-y = self.value;
+                        }
                     }
                 }
             }
