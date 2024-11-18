@@ -197,9 +197,9 @@ impl PointCloud {
 
         for _ in 0..NUM_POINTS {
             // 生成球形分布的随机点
-            let theta = rng.gen_range(0.0..std::f32::consts::PI * 2.0);
-            let phi = rng.gen_range(0.0..std::f32::consts::PI);
-            let r = rng.gen_range(0.0..1.0).powf(1.0 / 3.0); // 使用立方根使点分布更均匀
+            let theta = rng.gen_range(0.0f32..std::f32::consts::PI * 2.0);
+            let phi = rng.gen_range(0.0f32..std::f32::consts::PI);
+            let r = rng.gen_range(0.0f32..1.0).powf(1.0 / 3.0); // 使用立方根使点分布更均匀
 
             // 球坐标转笛卡尔坐标
             let x = r * phi.sin() * theta.cos();
@@ -210,9 +210,9 @@ impl PointCloud {
 
             // 生成随机颜色
             colors.extend_from_slice(&[
-                rng.gen_range(0.0..1.0), // r
-                rng.gen_range(0.0..1.0), // g
-                rng.gen_range(0.0..1.0), // b
+                rng.gen_range(0.0f32..1.0), // r
+                rng.gen_range(0.0f32..1.0), // g
+                rng.gen_range(0.0f32..1.0), // b
             ]);
         }
 
