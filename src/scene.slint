@@ -19,72 +19,28 @@ export component App inherits Window {
     private property <float> start-x;
     private property <float> start-y;
 
-    preferred-width: 500px;
+    preferred-width: 800px;
     preferred-height: 600px;
-    title: "Slint Point Cloud Viewer";
+    title: "Point Cloud Viewer";
 
-    VerticalLayout {
-        Text {
-            text: "This text is rendered using Slint. Drag the point cloud to rotate it.";
-            wrap: word-wrap;
-        }
-
-        Rectangle {
-            height: 400px;
-
-            touch-area := TouchArea {
-                width: 100%;
-                height: 100%;
-                
-                pointer-event(event) => {
-                    if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
-                        root.start-x = root.current-x;
-                        root.start-y = root.current-y;
-                    } else if (event.kind == PointerEventKind.move && self.pressed) {
-                        root.current-x = root.start-x + (self.mouse-y - self.pressed-y) / 1px;
-                        root.current-y = root.start-y + (self.mouse-x - self.pressed-x) / 1px * 0.5;
-                    }
-                }
-
-                i-image := Image {
-                    source: root.texture;
-                    width: 100%;
-                    height: 100%;
-                }
+    touch-area := TouchArea {
+        width: 100%;
+        height: 100%;
+        
+        pointer-event(event) => {
+            if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                root.start-x = root.current-x;
+                root.start-y = root.current-y;
+            } else if (event.kind == PointerEventKind.move && self.pressed) {
+                root.current-x = root.start-x + (self.mouse-y - self.pressed-y) / 1px;
+                root.current-y = root.start-y + (self.mouse-x - self.pressed-x) / 1px * 0.5;
             }
         }
 
-        GroupBox {
-            title: "Rotation Controls";
-            
-            GridBox {
-                Row {
-                    Text {
-                        text: "X Rotation:";
-                        vertical-alignment: center;
-                    }
-                    x-rotation := Slider {
-                        minimum: -180;
-                        maximum: 180;
-                        changed => {
-                            root.current-x = self.value;
-                        }
-                    }
-                }
-                Row {
-                    Text {
-                        text: "Y Rotation:";
-                        vertical-alignment: center;
-                    }
-                    y-rotation := Slider {
-                        minimum: -180;
-                        maximum: 180;
-                        changed => {
-                            root.current-y = self.value;
-                        }
-                    }
-                }
-            }
+        i-image := Image {
+            source: root.texture;
+            width: 100%;
+            height: 100%;
         }
     }
 }

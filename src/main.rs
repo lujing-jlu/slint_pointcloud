@@ -303,6 +303,9 @@ impl DemoRenderer {
                 );
                 
                 vec4 rotated_pos = rotateX * rotateY * vec4(position, 1.0);
+                
+                rotated_pos.xyz *= 0.8;
+                
                 gl_Position = vec4(rotated_pos.xyz, 1.0);
                 gl_PointSize = 2.0;
                 v_color = color;
