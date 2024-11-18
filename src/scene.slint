@@ -1,0 +1,60 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: MIT
+
+import { Slider, GroupBox, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
+
+export component App inherits Window {
+    in property <image> texture <=> image.source;
+    out property <int> requested-texture-width: image.width/1phx;
+    out property <int> requested-texture-height: image.height/1phx;
+    out property <float> rotation-x: x-rotation.value;
+    out property <float> rotation-y: y-rotation.value;
+
+    preferred-width: 500px;
+    preferred-height: 600px;
+    title: "Slint Point Cloud Viewer";
+
+    VerticalBox {
+        Text {
+            text: "This text is rendered using Slint. The point cloud below is rendered into an OpenGL texture.";
+            wrap: word-wrap;
+        }
+
+        image := Image {
+            preferred-width: 640px;
+            preferred-height: 640px;
+            min-width: 64px;
+            min-height: 64px;
+            width: 100%;
+        }
+
+        GroupBox {
+            title: "Rotation Controls";
+            
+            GridBox {
+                Row {
+                    Text {
+                        text: "X Rotation:";
+                        vertical-alignment: center;
+                    }
+                    x-rotation := Slider {
+                        minimum: 0;
+                        maximum: 360;
+                        value: 0;
+                    }
+                }
+                Row {
+                    Text {
+                        text: "Y Rotation:";
+                        vertical-alignment: center;
+                    }
+                    y-rotation := Slider {
+                        minimum: 0;
+                        maximum: 360;
+                        value: 0;
+                    }
+                }
+            }
+        }
+    }
+}

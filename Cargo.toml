@@ -1,0 +1,21 @@
+# Copyright © SixtyFPS GmbH <info@slint.dev>
+# SPDX-License-Identifier: MIT
+
+[package]
+name = "opengl_texture"
+version = "1.9.0"
+authors = ["Slint Developers <info@slint.dev>"]
+edition = "2021"
+build = "build.rs"
+license = "MIT"
+publish = false
+
+
+[dependencies]
+slint = "1.0"
+glow = "0.15"
+web-time = "1.0"
+rand = "0.8"
+
+[build-dependencies]
+slint-build = "1.0"
