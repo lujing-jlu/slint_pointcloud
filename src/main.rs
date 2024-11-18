@@ -268,6 +268,7 @@ struct DemoRenderer {
     displayed_texture: DemoTexture,
     next_texture: DemoTexture,
     start_time: web_time::Instant,
+    scale_location: glow::UniformLocation,
 }
 
 impl DemoRenderer {
@@ -283,6 +284,7 @@ impl DemoRenderer {
             
             uniform float rotation_x;
             uniform float rotation_y;
+            uniform float scale;
             
             void main() {
                 float rx = radians(rotation_x);
@@ -304,7 +306,7 @@ impl DemoRenderer {
                 
                 vec4 rotated_pos = rotateX * rotateY * vec4(position, 1.0);
                 
-                rotated_pos.xyz *= 0.8;
+                rotated_pos.xyz *= scale;
                 
                 gl_Position = vec4(rotated_pos.xyz, 1.0);
                 gl_PointSize = 2.0;
@@ -355,6 +357,9 @@ impl DemoRenderer {
             let rotation_y_location = gl
                 .get_uniform_location(program, "rotation_y")
                 .expect("Failed to get rotation_y uniform location");
+            let scale_location = gl
+                .get_uniform_location(program, "scale")
+                .expect("Failed to get scale uniform location");
 
             let position_location =
                 gl.get_attrib_location(program, "position")
@@ -395,6 +400,7 @@ impl DemoRenderer {
                 displayed_texture,
                 next_texture,
                 start_time: web_time::Instant::now(),
+                scale_location,
             }
         }
     }
@@ -405,6 +411,7 @@ impl DemoRenderer {
         height: u32,
         rotation_x: f32,
         rotation_y: f32,
+        scale: f32,
     ) -> slint::Image {
         unsafe {
             let gl = &self.gl;
@@ -434,6 +441,7 @@ impl DemoRenderer {
                 // 设置旋转角度
                 gl.uniform_1_f32(Some(&self.rotation_x_location), rotation_x);
                 gl.uniform_1_f32(Some(&self.rotation_y_location), rotation_y);
+                gl.uniform_1_f32(Some(&self.scale_location), scale);
 
                 // 绘制点云
                 gl.draw_arrays(glow::POINTS, 0, self.point_cloud.num_points);
@@ -493,6 +501,7 @@ fn main() {
                         app.get_requested_texture_height() as u32,
                         app.get_rotation_x(),
                         app.get_rotation_y(),
+                        app.get_point_scale(),
                     );
                     app.set_texture(slint::Image::from(texture));
                     app.window().request_redraw();

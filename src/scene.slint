@@ -1,7 +1,33 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: MIT
 
-import { Slider, GroupBox, HorizontalBox, VerticalBox, GridBox } from "std-widgets.slint";
+import { Slider, GroupBox, HorizontalBox, VerticalBox, GridBox, Button } from "std-widgets.slint";
+
+component ZoomButton inherits Rectangle {
+    callback clicked();
+    in property <string> text;
+    in property <bool> enabled: true;
+    width: 36px;
+    height: 36px;
+    background: touch.pressed ? #6b6b6b : touch.has-hover ? #404040 : #2c2c2c;
+    border-radius: 4px;
+    animate background { duration: 100ms; }
+
+    touch := TouchArea {
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    Text {
+        text: root.text;
+        color: root.enabled ? white : #888888;
+        font-size: 16px;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
 
 export component App inherits Window {
     // 避免双向绑定
@@ -19,8 +45,12 @@ export component App inherits Window {
     private property <float> start-x;
     private property <float> start-y;
 
+    // 存储缩放比例
+    private property <float> scale: 0.8;
+    out property <float> point-scale: scale;
+
     preferred-width: 800px;
-    preferred-height: 600px;
+    preferred-height: 800px;
     title: "Point Cloud Viewer";
 
     touch-area := TouchArea {
@@ -41,6 +71,40 @@ export component App inherits Window {
             source: root.texture;
             width: 100%;
             height: 100%;
+        }
+    }
+
+    // 缩放按钮容器
+    Rectangle {
+        x: parent.width - self.width - 10px;
+        y: parent.height - self.height - 10px;
+        width: 82px;
+        height: 36px;
+        background: #1e1e1e;
+        border-radius: 4px;
+        
+        HorizontalLayout {
+            padding: 0px;
+            spacing: 2px;
+
+            ZoomButton {
+                text: "-";
+                clicked => {
+                    root.scale = max(root.scale / 1.2, 0.2);
+                }
+            }
+
+            Rectangle {
+                width: 2px;
+                background: #404040;
+            }
+
+            ZoomButton {
+                text: "+";
+                clicked => {
+                    root.scale = min(root.scale * 1.2, 2.0);
+                }
+            }
         }
     }
 }
