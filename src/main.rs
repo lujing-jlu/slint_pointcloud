@@ -192,33 +192,24 @@ impl PointCloud {
         let mut positions = Vec::new();
         let mut colors = Vec::new();
 
-        // 生成10000个随机点
         const NUM_POINTS: usize = 10000;
 
         for _ in 0..NUM_POINTS {
-            // 生成球形分布的随机点
             let theta = rng.gen_range(0.0f32..std::f32::consts::PI * 2.0);
-            let phi = rng.gen_range(0.0f32..std::f32::consts::PI);
-            let r = rng.gen_range(0.0f32..1.0).powf(1.0 / 3.0); // 使用立方根使点分布更均匀
+            let phi = rng.gen_range(-1.0f32..1.0).acos();
+            let r = rng.gen_range(0.0f32..1.0).powf(1.0 / 3.0);
 
-            // 球坐标转笛卡尔坐标
             let x = r * phi.sin() * theta.cos();
             let y = r * phi.sin() * theta.sin();
             let z = r * phi.cos();
 
             positions.extend_from_slice(&[x, y, z]);
 
-            // 生成随机颜色
-            colors.extend_from_slice(&[
-                rng.gen_range(0.0f32..1.0), // r
-                rng.gen_range(0.0f32..1.0), // g
-                rng.gen_range(0.0f32..1.0), // b
-            ]);
+            colors.extend_from_slice(&[(x + 1.0) * 0.5, (y + 1.0) * 0.5, (z + 1.0) * 0.5]);
         }
 
         let num_points = NUM_POINTS as i32;
 
-        // 创建并上传位置数据
         let vbo_pos = gl.create_buffer().expect("Cannot create buffer");
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo_pos));
         gl.buffer_data_u8_slice(
@@ -227,7 +218,6 @@ impl PointCloud {
             glow::STATIC_DRAW,
         );
 
-        // 创建并上传颜色数据
         let vbo_color = gl.create_buffer().expect("Cannot create buffer");
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(vbo_color));
         gl.buffer_data_u8_slice(
@@ -269,6 +259,8 @@ struct DemoRenderer {
     next_texture: DemoTexture,
     start_time: web_time::Instant,
     scale_location: glow::UniformLocation,
+    aspect_ratio_location: glow::UniformLocation,
+    point_size_location: glow::UniformLocation,
 }
 
 impl DemoRenderer {
@@ -285,8 +277,18 @@ impl DemoRenderer {
             uniform float rotation_x;
             uniform float rotation_y;
             uniform float scale;
+            uniform float aspect_ratio;
+            uniform float point_size;
             
             void main() {
+                // 使用正交投影矩阵
+                mat4 ortho = mat4(
+                    1.0/aspect_ratio, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0
+                );
+                
                 float rx = radians(rotation_x);
                 float ry = radians(rotation_y);
                 
@@ -304,12 +306,19 @@ impl DemoRenderer {
                     0.0, 0.0, 0.0, 1.0
                 );
                 
-                vec4 rotated_pos = rotateX * rotateY * vec4(position, 1.0);
+                mat4 scaling = mat4(
+                    scale, 0.0, 0.0, 0.0,
+                    0.0, scale, 0.0, 0.0,
+                    0.0, 0.0, scale, 0.0,
+                    0.0, 0.0, 0.0, 1.0
+                );
                 
-                rotated_pos.xyz *= scale;
+                vec4 transformed_pos = ortho * rotateX * rotateY * scaling * vec4(position, 1.0);
+                gl_Position = transformed_pos;
                 
-                gl_Position = vec4(rotated_pos.xyz, 1.0);
-                gl_PointSize = 2.0;
+                // 固定点的大小，不随深度变化
+                gl_PointSize = point_size * scale;
+                
                 v_color = color;
             }"#;
 
@@ -360,6 +369,12 @@ impl DemoRenderer {
             let scale_location = gl
                 .get_uniform_location(program, "scale")
                 .expect("Failed to get scale uniform location");
+            let aspect_ratio_location = gl
+                .get_uniform_location(program, "aspect_ratio")
+                .expect("Failed to get aspect_ratio uniform location");
+            let point_size_location = gl
+                .get_uniform_location(program, "point_size")
+                .expect("Failed to get point_size uniform location");
 
             let position_location =
                 gl.get_attrib_location(program, "position")
@@ -375,7 +390,6 @@ impl DemoRenderer {
                 .expect("Cannot create vertex array");
             gl.bind_vertex_array(Some(vao));
 
-            // 设置顶点属性
             gl.bind_buffer(glow::ARRAY_BUFFER, Some(point_cloud.vbo_pos));
             gl.enable_vertex_attrib_array(position_location);
             gl.vertex_attrib_pointer_f32(position_location, 3, glow::FLOAT, false, 0, 0);
@@ -401,6 +415,8 @@ impl DemoRenderer {
                 next_texture,
                 start_time: web_time::Instant::now(),
                 scale_location,
+                aspect_ratio_location,
+                point_size_location,
             }
         }
     }
@@ -412,6 +428,7 @@ impl DemoRenderer {
         rotation_x: f32,
         rotation_y: f32,
         scale: f32,
+        point_size: f32,
     ) -> slint::Image {
         unsafe {
             let gl = &self.gl;
@@ -435,15 +452,17 @@ impl DemoRenderer {
                     self.next_texture.height as _,
                 );
 
+                let aspect_ratio = width as f32 / height as f32;
+                gl.uniform_1_f32(Some(&self.aspect_ratio_location), aspect_ratio);
+
                 gl.clear_color(0.0, 0.0, 0.0, 1.0);
                 gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
-                // 设置旋转角度
                 gl.uniform_1_f32(Some(&self.rotation_x_location), rotation_x);
                 gl.uniform_1_f32(Some(&self.rotation_y_location), rotation_y);
                 gl.uniform_1_f32(Some(&self.scale_location), scale);
+                gl.uniform_1_f32(Some(&self.point_size_location), point_size);
 
-                // 绘制点云
                 gl.draw_arrays(glow::POINTS, 0, self.point_cloud.num_points);
 
                 gl.viewport(
@@ -502,6 +521,7 @@ fn main() {
                         app.get_rotation_x(),
                         app.get_rotation_y(),
                         app.get_point_scale(),
+                        app.get_current_point_size(),
                     );
                     app.set_texture(slint::Image::from(texture));
                     app.window().request_redraw();

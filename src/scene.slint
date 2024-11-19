@@ -49,6 +49,10 @@ export component App inherits Window {
     private property <float> scale: 0.8;
     out property <float> point-scale: scale;
 
+    // 添加点大小属性
+    private property <float> point-size: 4.0;
+    out property <float> current-point-size: point-size;
+
     preferred-width: 800px;
     preferred-height: 800px;
     title: "Point Cloud Viewer";
@@ -62,7 +66,7 @@ export component App inherits Window {
                 root.start-x = root.current-x;
                 root.start-y = root.current-y;
             } else if (event.kind == PointerEventKind.move && self.pressed) {
-                root.current-x = root.start-x + (self.mouse-y - self.pressed-y) / 1px;
+                root.current-x = root.start-x + (self.mouse-y - self.pressed-y) / 1px * 0.5;
                 root.current-y = root.start-y + (self.mouse-x - self.pressed-x) / 1px * 0.5;
             }
         }
@@ -90,7 +94,7 @@ export component App inherits Window {
             ZoomButton {
                 text: "-";
                 clicked => {
-                    root.scale = max(root.scale / 1.2, 0.2);
+                    root.scale = max(root.scale / 1.2, 0.1);
                 }
             }
 
@@ -102,7 +106,41 @@ export component App inherits Window {
             ZoomButton {
                 text: "+";
                 clicked => {
-                    root.scale = min(root.scale * 1.2, 2.0);
+                    root.scale = min(root.scale * 1.2, 3.0);
+                }
+            }
+        }
+    }
+
+    // 添加点大小控制按钮组
+    Rectangle {
+        x: parent.width - self.width - 10px;
+        y: parent.height - self.height - 56px;  // 放在缩放按钮上方
+        width: 82px;
+        height: 36px;
+        background: #1e1e1e;
+        border-radius: 4px;
+        
+        HorizontalLayout {
+            padding: 0px;
+            spacing: 2px;
+
+            ZoomButton {
+                text: "•";  // 小点符号
+                clicked => {
+                    root.point-size = max(root.point-size - 1.0, 1.0);
+                }
+            }
+
+            Rectangle {
+                width: 2px;
+                background: #404040;
+            }
+
+            ZoomButton {
+                text: "●";  // 大点符号
+                clicked => {
+                    root.point-size = min(root.point-size + 1.0, 10.0);
                 }
             }
         }

@@ -1,6 +1,6 @@
 <!-- Copyright © SixtyFPS GmbH <info@slint.dev> ; SPDX-License-Identifier: MIT -->
 
-# OpenGL Texture Import Example
+# slint_pointcloud
 
 This example application demonstrates how import an OpenGL texture into a Slint scene:
 
@@ -13,5 +13,3 @@ This is implemented using the `set_rendering_notifier` function on the `slint::W
 Since the graphical effect is continuous, the code in the callback requests a redraw of the contents by calling `slint::Window::request_redraw()`.
 
 ![Screenshot of the OpenGL Texture Example on macOS](https://github.com/slint-ui/slint/assets/1486/b9f1f6cf-3859-418e-9662-0c7170c3b1f2 "OpenGL Texture")
-# slint_pointcloud
-# slint_pointcloud
